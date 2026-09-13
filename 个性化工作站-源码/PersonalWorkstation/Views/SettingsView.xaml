@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="PersonalWorkstation.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20,24,24">
+    <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
+
+      <!-- 数据与备份 -->
+      <StackPanel x:Name="PanelData">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="数据文件" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="{Binding DataFileDisplay}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+            <TextBlock Style="{StaticResource Dim}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Text="数据存在程序同目录的 data 文件夹里（一个独立文件）。把整个文件夹复制到 U 盘或别的盘，就是一份完整备份。刷新、关闭、重启电脑都不会丢。"/>
+            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+              <Button Style="{StaticResource SecondaryButton}" Content="打开数据文件夹" Command="{Binding OpenDataFolderCommand}"/>
+              <Button Style="{StaticResource SecondaryButton}" Content="打开备份文件夹" Command="{Binding OpenBackupFolderCommand}" Margin="8,0,0,0"/>
+              <Button Style="{StaticResource SecondaryButton}" Content="立即保存" Command="{Binding SaveNowCommand}" Margin="8,0,0,0"/>
+              <Button Style="{StaticResource SecondaryButton}" Content="重新加载" Command="{Binding ReloadCommand}" Margin="8,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <Grid>
+              <TextBlock Text="备份与恢复" Style="{StaticResource SectionTitle}"/>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="{Binding BackupCountText}" Style="{StaticResource Dim}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button Style="{StaticResource SecondaryButton}" Content="从文件导入" Command="{Binding ImportBackupCommand}"/>
+                <Button Style="{StaticResource PrimaryButton}" Content="立即备份" Command="{Binding BackupNowCommand}" Margin="8,0,0,0"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap"
+                       Text="程序启动和退出时，如果数据有变化就会自动备份，最多保留最近 60 份。恢复或导入之前，都会先把当前数据另存一份，所以操作可以回退。"/>
+            <ItemsControl ItemsSource="{Binding Backups}" Margin="0,14,0,0">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{DynamicResource Separator}" BorderThickness="0,0,0,1" Padding="0,8">
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Grid.Column="0" Text="{Binding CreatedText}" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                      <TextBlock Grid.Column="2" Text="{Binding SizeText}" Style="{StaticResource Dim}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                      <Button Grid.Column="3" Style="{StaticResource SecondaryButton}" Content="恢复" Height="28"
+                              Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              CommandParameter="{Binding}"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- 外观与导航 -->
+      <StackPanel x:Name="PanelAppearance" Visibility="Collapsed">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="主题" Style="{StaticResource SectionTitle}"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Style="{StaticResource SecondaryButton}" Content="浅色" Command="{Binding SetThemeCommand}" CommandParameter="light"/>
+              <Button Style="{StaticResource SecondaryButton}" Content="深色" Command="{Binding SetThemeCommand}" CommandParameter="dark" Margin="8,0,0,0"/>
+              <Button Style="{StaticResource SecondaryButton}" Content="跟随系统" Command="{Binding SetThemeCommand}" CommandParameter="system" Margin="8,0,0,0"/>
+              <TextBlock Text="{Binding ThemeLabel, StringFormat=当前：{0}}" Style="{StaticResource Dim}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="导航栏" Style="{StaticResource SectionTitle}"/>
+            <CheckBox Content="显示左侧导航栏" IsChecked="{Binding NavVisible, Mode=TwoWay}" Margin="0,2"/>
+            <CheckBox Content="折叠为窄图标条" IsChecked="{Binding NavCollapsed, Mode=TwoWay}" Margin="0,8,0,2"/>
+            <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="隐藏导航栏之后，用窗口左上角的按钮可以重新显示。「数据与设置」固定在导航栏底部，不随其他模块一起滚动。快捷键 Ctrl+1~9 可直接切换模块。"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- 关于与危险操作 -->
+      <StackPanel x:Name="PanelAbout" Visibility="Collapsed">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="关于" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="个性化工作站 · 版本 1.0.0" FontWeight="SemiBold"/>
+            <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,8,0,0"
+                       Text="只在本机使用：不需要登录、不联网、不上传任何数据、不接任何第三方平台。所有内容都保存在你自己电脑上的数据文件里。"/>
+            <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,8,0,0"
+                       Text="快捷键：Ctrl+1~9 切换模块 · Ctrl+S 立即保存 · F5 重新加载数据文件"/>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="危险操作" Style="{StaticResource SectionTitle}" Foreground="{DynamicResource Danger}"/>
+            <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap"
+                       Text="清空所有数据会删除全部模块的记录（客户、项目、沟通记录、内容排期、训练、饮食、娱乐等），只留下一个空的数据文件。清空之前会自动备份一份，万一清错了可以从上面的备份列表里恢复。"/>
+            <Button Style="{StaticResource DangerButton}" Content="清空所有数据" HorizontalAlignment="Left"
+                    Margin="0,14,0,0" Command="{Binding ResetDataCommand}"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="PersonalWorkstation.Views.PlaceholderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20,24,24">
+    <Border Style="{StaticResource Card}" MaxWidth="880" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <Border Background="{DynamicResource AccentSoft}" CornerRadius="8" Width="36" Height="36">
+            <TextBlock Style="{StaticResource Glyph}" Text="&#xE7C3;" FontSize="16"
+                       Foreground="{DynamicResource Accent}" HorizontalAlignment="Center"/>
+          </Border>
+          <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Heading}" Style="{StaticResource CardTitle}"/>
+            <TextBlock Text="{Binding Stage}" Style="{StaticResource Dim}" Margin="0,3,0,0"/>
+          </StackPanel>
+        </StackPanel>
+
+        <TextBlock Text="{Binding Note}" Margin="0,16,0,0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextSecondary}" LineHeight="21"/>
+
+        <Border Style="{StaticResource HairSeparator}"/>
+
+        <TextBlock Text="这一页计划包含" Style="{StaticResource SectionTitle}"/>
+        <ItemsControl ItemsSource="{Binding Bullets}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,7">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="•" Margin="2,0,8,0" Foreground="{DynamicResource TextMuted}"/>
+                <TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" LineHeight="21"
+                           Foreground="{DynamicResource TextSecondary}"/>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

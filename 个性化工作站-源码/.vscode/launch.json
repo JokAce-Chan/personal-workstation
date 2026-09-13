@@ -1,0 +1,16 @@
+﻿{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "调试：个性化工作站",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/PersonalWorkstation/bin/Debug/net8.0-windows/PersonalWorkstation.dll",
+      "args": [ "--data-dir", "${workspaceFolder}/.dev-data" ],
+      "cwd": "${workspaceFolder}/PersonalWorkstation",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    }
+  ]
+}

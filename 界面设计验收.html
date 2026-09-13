@@ -1,0 +1,835 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个性化工作站 · 界面设计验收稿（M1 骨架）</title>
+<style>
+/* ── 配色：与 WPF 的 Light.xaml / Dark.xaml 一一对应 ───────────────── */
+:root{
+  --window-bg:#F4F5F7; --panel:#FFFFFF; --nav-bg:#FAFBFC; --topbar:#FFFFFF; --status:#F0F2F5;
+  --border:#E5E7EB; --separator:#ECEEF1; --hover:#EEF1F5; --input:#FFFFFF;
+  --text:#1F2329; --text2:#5A6270; --muted:#98A0AC;
+  --accent:#2F6FED; --accent-hover:#1F5AD6; --accent-soft:#E8F0FE; --on-accent:#FFFFFF;
+  --accent-ghost:rgba(47,111,237,.14);
+  --success:#1EA672; --success-soft:#E4F5EE; --warning:#D98A16; --warning-soft:#FCF2E2;
+  --danger:#DE4B4B; --danger-soft:#FCEBEB; --neutral-soft:#EEF0F3;
+  --shadow:0 6px 20px rgba(15,23,42,.10);
+}
+html[data-theme="dark"]{
+  --window-bg:#141519; --panel:#1E1F25; --nav-bg:#191A1F; --topbar:#1E1F25; --status:#191A1F;
+  --border:#2E3038; --separator:#2A2C33; --hover:#272930; --input:#26272E;
+  --text:#E6E8EC; --text2:#A8AEBA; --muted:#767D8A;
+  --accent:#4F8BFF; --accent-hover:#6BA0FF; --accent-soft:#22304A; --on-accent:#FFFFFF;
+  --accent-ghost:rgba(79,139,255,.20);
+  --success:#3FBF87; --success-soft:#1C3A2E; --warning:#E9B45C; --warning-soft:#3A2F1A;
+  --danger:#E56767; --danger-soft:#3A2323; --neutral-soft:#26272E;
+  --shadow:0 6px 20px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:13px; color:var(--text); background:var(--window-bg);
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+.glyph{font-family:"Segoe MDL2 Assets","Segoe Fluent Icons",sans-serif;line-height:1;display:inline-block;}
+button{font-family:inherit;font-size:13px;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+
+/* ── 整体：顶栏 / 主体 / 状态栏，自上而下三段 ─────────────────────── */
+.app{height:100%;display:flex;flex-direction:column;}
+
+/* ① 顶部栏（高 52） */
+.topbar{
+  height:52px;flex:0 0 52px;background:var(--topbar);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:4px;
+}
+.topbar .brand{font-size:15px;font-weight:600;margin-left:4px;white-space:nowrap;}
+.topbar .spacer{flex:1;}
+.topbar .today{color:var(--text2);margin-right:16px;white-space:nowrap;}
+.iconbtn{
+  width:32px;height:32px;border-radius:6px;color:var(--text2);
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.iconbtn:hover{background:var(--hover);color:var(--text);}
+.iconbtn.hidden{display:none;}
+.savewrap{display:flex;align-items:center;margin-right:6px;}
+.save-dot{font-size:10px;color:var(--success);margin-right:6px;}
+.save-dot.err{color:var(--danger);}
+#saveStatus{font-size:12px;color:var(--text2);margin-right:14px;white-space:nowrap;}
+
+/* ② 主体 */
+.body{flex:1;display:flex;min-height:0;}
+
+/* 左侧导航：宽 236 / 折叠 58 / 隐藏 0 */
+.nav{
+  position:relative;width:236px;flex:0 0 236px;background:var(--nav-bg);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  transition:width .16s ease, flex-basis .16s ease;
+}
+.nav.hidden{border-right:0;}
+.nav.resizing{transition:none;}
+/* 右侧边界：拖动改变导航栏宽度 */
+.nav-resizer{position:absolute;top:0;right:0;bottom:0;width:7px;cursor:col-resize;z-index:6;}
+.nav-resizer::after{content:"";position:absolute;top:0;bottom:0;right:3px;width:2px;background:transparent;}
+.nav-resizer:hover::after,.nav.resizing .nav-resizer::after{background:var(--accent);}
+.nav.collapsed .nav-resizer,.nav.hidden .nav-resizer{display:none;}
+body.resizing{user-select:none;cursor:col-resize;}
+.nav-scroll{flex:1;overflow-y:auto;padding:6px 0;}
+.nav-pinned{border-top:1px solid var(--border);padding:6px 0 8px;flex:0 0 auto;}
+
+.group-head{
+  display:flex;align-items:center;width:100%;padding:12px 10px 6px 14px;color:var(--muted);
+}
+.group-head:hover{color:var(--text2);}
+.group-head .glyph{font-size:10px;margin-right:8px;}
+.group-head .gtitle{font-size:12px;}
+.group-items{overflow:hidden;}
+.group.collapsed .group-items{display:none;}
+.nav.collapsed .group-head{display:none;}
+
+.nav-item{
+  display:flex;align-items:center;height:34px;margin:1px 8px;padding:0 10px;border-radius:6px;
+  color:var(--text2);width:calc(100% - 16px);
+}
+.nav-item:hover{background:var(--hover);color:var(--text);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+.nav-item .glyph{font-size:15px;width:22px;text-align:center;flex:0 0 22px;}
+.nav-item .label{font-size:13px;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav.collapsed .nav-item{justify-content:center;padding:0;}
+.nav.collapsed .nav-item .label{display:none;}
+
+/* 「首页总览」这一行：模块与折叠按钮放在同一个小框架里 */
+.nav-home-row{
+  display:flex;align-items:center;gap:8px;margin:2px 8px 4px;padding:2px;
+  border:1px solid var(--border);border-radius:8px;background:var(--panel);
+}
+.nav-home-row .nav-item{margin:0;width:auto;flex:1;min-width:0;padding:0 10px;}
+.nav-home-row .nav-collapse-btn{margin-left:auto;}
+.nav-home-row:hover{background:var(--hover);}
+.nav-home-row:hover .nav-item,.nav-home-row.active .nav-item{background:transparent;}
+/* 选中时蓝色底色铺满整个小框架（把折叠按钮也包在里面），按钮用主色画，在底色上看得清 */
+.nav-home-row.active{border-color:var(--accent-soft);background:var(--accent-soft);}
+.nav-home-row.active .nav-item{color:var(--accent);font-weight:600;}
+.nav-collapse-btn{
+  width:26px;height:26px;border-radius:6px;color:var(--text2);flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.nav-collapse-btn:hover{background:var(--hover);color:var(--text);}
+.nav-home-row.active .nav-collapse-btn{color:var(--accent);}
+.nav-home-row.active .nav-collapse-btn:hover{background:var(--accent-ghost);color:var(--accent-hover);}
+.nav-collapse-btn .glyph{font-size:11px;}
+/* 折叠成图标条后：这一行不再显示「首页总览」，只留折叠按钮 */
+.nav.collapsed .nav-home-row{
+  margin:2px 10px 4px;padding:0;border-color:transparent;background:transparent;justify-content:center;
+}
+.nav.collapsed .nav-home-row .nav-item{display:none;}
+.nav.collapsed .nav-home-row .nav-collapse-btn{margin-left:0;color:var(--text2);}
+.nav.collapsed .nav-home-row .nav-collapse-btn:hover{background:var(--hover);color:var(--text);}
+
+/* 右侧内容区 */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;}
+.content-head{background:var(--topbar);border-bottom:1px solid var(--border);flex:0 0 auto;}
+.title-row{display:flex;align-items:baseline;padding:14px 24px 0;}
+.title-row h1{margin:0;font-size:18px;font-weight:600;}
+.title-row .summary{margin-left:12px;font-size:12px;color:var(--muted);}
+.tabs{display:flex;margin:10px 24px 0;flex-wrap:wrap;}
+.tab{
+  position:relative;padding:10px 12px 9px;color:var(--text2);font-size:13px;border-radius:6px 6px 0 0;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);font-weight:600;}
+.tab.active::after{
+  content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--accent);
+}
+.content-body{flex:1;overflow-y:auto;padding:20px 24px 24px;background:var(--window-bg);}
+
+/* ── 通用控件 ─────────────────────────────────────────────────────── */
+.card{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;
+  max-width:880px;
+}
+.card.wide{max-width:1000px;}
+.card + .card{margin-top:14px;}
+.section-title{font-size:14px;font-weight:600;margin:0 0 8px;}
+.muted{color:var(--text2);font-size:12px;}
+.dim{color:var(--muted);font-size:12px;}
+.hair{height:1px;background:var(--separator);margin:12px 0;}
+.row{display:flex;align-items:center;gap:8px;}
+.row.between{justify-content:space-between;}
+.bullets{margin:0;padding:0;list-style:none;}
+.bullets li{display:flex;gap:8px;margin-bottom:7px;color:var(--text2);line-height:21px;}
+.bullets li .dot{color:var(--muted);flex:0 0 auto;}
+
+.btn{
+  height:32px;padding:0 14px;border-radius:6px;font-size:13px;
+  display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:var(--on-accent);}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-secondary{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--hover);}
+.btn-danger{background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger-soft);}
+.btn-danger:hover{border-color:var(--danger);}
+.btn.small{height:28px;padding:0 12px;}
+
+.checkline{display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer;user-select:none;}
+input[type=checkbox]{appearance:none;width:16px;height:16px;border:1px solid var(--border);
+  border-radius:4px;background:var(--input);position:relative;cursor:pointer;margin:0;flex:0 0 16px;}
+input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent);}
+input[type=checkbox]:checked::after{
+  content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;
+  border:solid var(--on-accent);border-width:0 2px 2px 0;transform:rotate(45deg);}
+
+/* 占位页：图标 + 标题 + 阶段 + 说明 + 计划内容 */
+.ph-head{display:flex;align-items:center;}
+.ph-icon{
+  width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 36px;
+}
+.ph-title{font-size:15px;font-weight:600;}
+.ph-note{margin:16px 0 0;color:var(--text2);line-height:21px;}
+
+/* ③ 状态栏 */
+.statusbar{
+  height:auto;flex:0 0 auto;background:var(--status);border-top:1px solid var(--border);
+  padding:5px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.statusbar .left{display:flex;align-items:center;gap:6px;min-width:0;}
+.statusbar .glyph{font-size:12px;color:var(--muted);}
+.statusbar .link{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.statusbar .link:hover{color:var(--accent);text-decoration:underline;}
+.statusbar .right{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;color:var(--muted);}
+
+/* 备份列表 */
+.bk-row{display:grid;grid-template-columns:150px 1fr auto auto;gap:12px;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--separator);font-size:13px;}
+.bk-row:last-child{border-bottom:0;}
+.bk-empty{color:var(--muted);font-size:12px;padding:10px 0;}
+
+/* ── 验收清单抽屉 ─────────────────────────────────────────────────── */
+#checkPanel{
+  position:fixed;top:0;right:0;bottom:0;width:368px;background:var(--panel);
+  border-left:1px solid var(--border);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .18s ease;z-index:20;
+}
+#checkPanel.open{transform:none;}
+#checkPanel header{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--border);}
+#checkPanel h2{margin:0;font-size:15px;font-weight:600;}
+#checkPanel .cp-body{flex:1;overflow-y:auto;padding:8px 16px 16px;}
+#checkPanel .cp-foot{padding:10px 16px;border-top:1px solid var(--border);display:flex;
+  align-items:center;justify-content:space-between;gap:10px;}
+.cp-group{margin-top:14px;}
+.cp-group h3{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600;}
+.cp-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;cursor:pointer;line-height:19px;}
+.cp-item span{color:var(--text2);}
+.cp-item.done span{color:var(--muted);text-decoration:line-through;}
+.progress{height:6px;border-radius:3px;background:var(--neutral-soft);overflow:hidden;flex:1;}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .15s ease;}
+
+/* 首次打开的小提示 */
+#hint{
+  position:fixed;right:18px;bottom:46px;background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;box-shadow:var(--shadow);padding:10px 12px;font-size:12px;color:var(--text2);
+  display:flex;align-items:center;gap:10px;z-index:15;
+}
+#hint .glyph{color:var(--accent);font-size:14px;}
+#hint .x{color:var(--muted);font-size:14px;}
+#hint .x:hover{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ① 顶部栏 -->
+  <header class="topbar">
+    <button class="iconbtn" id="btnNavVisible" title="显示 / 隐藏左侧导航栏"><span class="glyph">&#xE700;</span></button>
+    <span class="brand">个性化工作站</span>
+    <span class="spacer"></span>
+    <span class="today" id="todayText"></span>
+    <span class="savewrap">
+      <span class="glyph save-dot" id="saveDot">&#xE73E;</span>
+      <span id="saveStatus">已保存 --:--:--</span>
+    </span>
+    <button class="iconbtn" id="btnTheme" title="主题：浅色（点击切换）"><span class="glyph">&#xE706;</span></button>
+
+    <button class="iconbtn" id="btnCheck" title="验收清单"><span class="glyph">&#xE9D5;</span></button>
+  </header>
+  <!-- ② 主体 -->
+  <div class="body">
+    <aside class="nav" id="nav">
+      <div class="nav-scroll" id="navScroll"></div>
+      <div class="nav-pinned" id="navPinned"></div>
+      <div class="nav-resizer" id="navResizer" title="拖动改变导航栏宽度（双击恢复默认）"></div>
+    </aside>
+
+    <main class="main">
+      <div class="content-head">
+        <div class="title-row">
+          <h1 id="moduleTitle">首页总览</h1>
+          <span class="summary" id="moduleSummary"></span>
+        </div>
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="content-body" id="contentBody"></div>
+    </main>
+  </div>
+
+  <!-- ③ 状态栏 -->
+  <footer class="statusbar">
+    <div class="left">
+      <span class="glyph">&#xE8B7;</span>
+      <span class="link" id="dataFileText" title="点击打开数据文件夹"></span>
+    </div>
+    <div class="right">
+      <span id="backupCountText">暂无备份</span>
+      <span>·</span>
+      <span id="saveStatus2">已保存 --:--:--</span>
+      <span>·</span>
+      <span>版本 1.0.0</span>
+    </div>
+  </footer>
+</div>
+
+<!-- 验收清单抽屉 -->
+<aside id="checkPanel">
+  <header>
+    <h2>验收清单</h2>
+    <button class="iconbtn" id="btnCheckClose" title="关闭"><span class="glyph">&#xE711;</span></button>
+  </header>
+  <div class="cp-body" id="cpBody"></div>
+  <div class="cp-foot">
+    <div class="progress"><i id="cpBar"></i></div>
+    <span class="dim" id="cpCount">0 / 0</span>
+    <button class="btn btn-secondary small" id="cpReset">清空勾选</button>
+  </div>
+</aside>
+
+<div id="hint">
+  <span class="glyph">&#xE946;</span>
+  <span>这是 M1 骨架的界面验收稿：点左侧模块切页，「首页总览」右侧的 ‹ 可折叠导航，导航右边界可拖动改宽，右上角可切主题。右上角「验收清单」可逐项核对。</span>
+  <button class="x" id="hintClose" title="不再显示"><span class="glyph">&#xE711;</span></button>
+</div>
+<script>
+/* ── 左侧导航分组（与 NavModels / MainViewModel 一致） ─────────────── */
+var GROUPS = [
+  { key:"top",  title:"" },
+  { key:"work", title:"工作事务" },
+  { key:"create", title:"内容创作" },
+  { key:"life", title:"生活健康" }
+];
+
+/* ── 模块与详细标签页（图标为 Segoe MDL2 Assets 字形，与程序一致） ── */
+var MODULES = [
+  { key:"home", group:"top", title:"首页总览", icon:"\uE80F", summary:"今日计划、快速备忘与各模块摘要",
+    tabs:[{ key:"home-overview", title:"今日总览", page:{ title:"今日总览", stage:"计划在 M2 阶段实现",
+      note:"打开程序第一眼看到的地方：今天要做什么、有什么要跟进、各模块的关键摘要。",
+      bullets:["今日计划卡片：直接勾选完成，显示完成进度","快速备忘：随手记一句话，置顶常用内容",
+        "客户跟进提醒：逾期和今天该联系的客户（红色标记）","交付物截止提醒：3 天内到期的交付物",
+        "健身打卡：显示今天该练什么，一键打卡","饮食进度：今日热量环形进度与营养素进度条",
+        "自媒体排期：即将发布的内容","开发工作：进行中项目数与未完成缺陷数"]}}]},
+
+  { key:"plan", group:"work", title:"今日计划", icon:"\uE787", summary:"当天要做的事、优先级与顺延",
+    tabs:[
+      { key:"plan-tasks", title:"任务清单", page:{ title:"任务清单", stage:"计划在 M2 阶段实现",
+        note:"当天要做的事，按优先级排好，做完打勾，做不完顺延到明天。",
+        bullets:["日期切换：前一天 / 今天 / 后一天，可补录历史","任务项：优先级色条、标题、模块标签、拖动排序",
+          "行内操作：双击改名、勾选完成、顺延到明天、复制、删除","底部操作：把未完成项批量顺延到明天"]}},
+      { key:"plan-calendar", title:"月历与完成率", page:{ title:"月历与完成率", stage:"计划在 M2 阶段实现",
+        note:"用月历回看每天的任务分布，用完成率看自己最近有没有掉链子。",
+        bullets:["小月历：有任务的日期标圆点，点一天跳到那天的清单",
+          "近 7 天完成率柱状图（自绘，不引第三方图表库）","本月统计：任务总数、完成数、平均完成率"]}}]},
+
+  { key:"dev", group:"work", title:"开发工作", icon:"\uE943", summary:"项目、待办与缺陷、代码片段",
+    tabs:[
+      { key:"dev-projects", title:"项目与待办", page:{ title:"项目与待办", stage:"计划在 M3 阶段实现",
+        note:"左边是项目列表，右边是该项目的待办、缺陷和想法。",
+        bullets:["项目卡片：名称、状态、进度条（按待办完成比自动算）、截止日期",
+          "左侧项目列表可增删改，截止日期临近自动高亮",
+          "待办项：类型（任务 / 缺陷 / 想法）、优先级、状态、完成时间","筛选：只看未完成、只看缺陷、按优先级排序"]}},
+      { key:"dev-snippets", title:"代码片段", page:{ title:"代码片段", stage:"计划在 M3 阶段实现",
+        note:"随手存下来的代码片段，用的时候一键复制走。",
+        bullets:["片段：标题、语言、代码正文、说明","代码用等宽字体显示，保留缩进","一键复制到剪贴板",
+          "支持按项目归档，也可以是不属于任何项目的公共片段"]}},
+      { key:"dev-notes", title:"项目笔记", page:{ title:"项目笔记", stage:"计划在 M3 阶段实现",
+        note:"每个项目的技术决定、踩坑记录和待验证的想法。",
+        bullets:["按项目分组的多行笔记，保留换行","适合记：技术选型理由、环境配置、待验证方案",
+          "顶部显示项目当前状态与未完成缺陷数"]}}]},
+
+  { key:"consulting", group:"work", title:"咨询工作", icon:"\uE77B", summary:"客户、项目、沟通记录与时长费用",
+    tabs:[
+      { key:"consulting-clients", title:"客户", page:{ title:"客户", stage:"计划在 M3 阶段实现",
+        note:"你的客户档案：怎么称呼、怎么联系、聊到哪一步了。",
+        bullets:["客户状态：潜在 / 合作中 / 暂停 / 已结束","字段：称呼、公司或身份、联系方式、来源、备注",
+          "下次联系时间：到期与逾期在列表里用红色标记","右侧详情：关联项目、最近沟通记录",
+          "按下次联系时间排序，一眼看出该联系谁"]}},
+      { key:"consulting-projects", title:"咨询项目", page:{ title:"咨询项目", stage:"计划在 M3 阶段实现",
+        note:"一个客户可以有几个项目，每个项目的交付物和跟进事项都在这里。",
+        bullets:["项目字段：名称、需求描述、状态（洽谈 / 进行中 / 待交付 / 已完成 / 暂停）",
+          "起止日期、截止日期、下次联系时间","交付物清单：标题 + 截止日期 + 状态 + 勾选完成",
+          "跟进事项：一句话 + 计划日期 + 完成勾选","到期交付物和逾期跟进自动高亮"]}},
+      { key:"consulting-logs", title:"沟通记录", page:{ title:"沟通记录", stage:"计划在 M3 阶段实现",
+        note:"每次开会、打电话、聊微信的要点，以及这次算不算钱。",
+        bullets:["记录字段：日期、客户、项目、类型（会议 / 电话 / 微信 / 邮件 / 其他）",
+          "时长（分钟）、摘要、详细笔记","计费方式：不计费 / 按小时 / 一口价，金额自动算",
+          "按时间倒序的时间线，可按客户或项目筛选"]}},
+      { key:"consulting-fee", title:"费用统计", page:{ title:"费用统计", stage:"计划在 M3 阶段实现",
+        note:"只做记录和汇总，不做发票、不做账务、不做税务。",
+        bullets:["月份切换：本月总时长与总金额","按客户汇总表：时长、金额",
+          "按项目明细表：可下钻到对应的沟通记录","所有数字都来自沟通记录，不单独记账"]}}]},
+  { key:"social", group:"create", title:"自媒体", icon:"\uE714", summary:"选题、排期与发布后数据",
+    tabs:[
+      { key:"social-schedule", title:"内容排期", page:{ title:"内容排期", stage:"计划在 M4 阶段实现",
+        note:"哪天发什么、发到哪个平台、发完之后表现如何。",
+        bullets:["内容：标题、平台（可多选）、状态（想法 / 草稿 / 待发布 / 已发布 / 放弃）",
+          "计划日期、实际发布日期、脚本正文、素材清单","发布后手动填写：播放、点赞、评论、涨粉、转发",
+          "视图切换：表格 / 按状态看板；按平台与状态筛选"]}},
+      { key:"social-ideas", title:"灵感池", page:{ title:"灵感池", stage:"计划在 M4 阶段实现",
+        note:"突然想到的选题先扔进来，别丢。",
+        bullets:["快速捕获框：输入回车即保存","卡片流展示，带标签与时间",
+          "一键转为内容，标题自动带过去","想不出东西的时候翻一翻"]}},
+      { key:"social-review", title:"数据复盘", page:{ title:"数据复盘", stage:"计划在 M4 阶段实现",
+        note:"哪条内容表现好、为什么好，用一句话记下来。",
+        bullets:["本月统计：发布条数、总播放、平均播放、最高播放","近 8 周发布数与播放量柱状图",
+          "所有内容的数据明细表，可按任意列排序","每条内容的复盘备注汇总"]}},
+      { key:"social-platforms", title:"平台管理", page:{ title:"平台管理", stage:"计划在 M4 阶段实现",
+        note:"维护你发内容的平台清单，用于所有下拉和筛选。",
+        bullets:["平台增删改（例如：微信公众号、视频号、抖音、B站、小红书、知乎）",
+          "修改名称会同步到已有内容","明确边界：不自动抓取任何平台数据，全部手动录入"]}}]},
+
+  { key:"fitness", group:"life", title:"健身计划", icon:"\uEB51", summary:"本周安排、训练打卡与身体数据",
+    tabs:[
+      { key:"fitness-week", title:"本周安排", page:{ title:"本周安排", stage:"计划在 M6 阶段实现",
+        note:"周一练什么、周二练什么，先安排明白，练的时候照做。",
+        bullets:["7 天纵向卡片，每天可写标题（如「上肢推」「休息」）",
+          "每天的动作清单：动作名、组数、次数、重量提示","复制到其他天，复用同一套安排","休息日显示为浅色"]}},
+      { key:"fitness-sessions", title:"训练记录", page:{ title:"训练记录", stage:"计划在 M6 阶段实现",
+        note:"实际练了什么：每个动作做了几组、每组多少次、多重。",
+        bullets:["开始打卡：按今天计划预填动作，逐组打勾并填实际重量",
+          "记录：日期、标题、时长、身体感受、备注","左侧记录列表 + 右侧当次详情","本周训练次数统计，对照每周目标"]}},
+      { key:"fitness-body", title:"身体数据", page:{ title:"身体数据", stage:"计划在 M6 阶段实现",
+        note:"体重和围度的变化曲线，看长期趋势而不是某一天的数字。",
+        bullets:["记录：体重、体脂、腰围、胸围、臂围、大腿围","体重折线图（自绘）",
+          "与 7 天前 / 30 天前对比","距离目标体重还差多少"]}},
+      { key:"fitness-goals", title:"目标", page:{ title:"目标", stage:"计划在 M6 阶段实现",
+        note:"目标体重和每周训练次数，首页会引用这里的设置。",
+        bullets:["目标体重、每周训练次数、备注","本周达标进度（如 2/3 次）","目标体重与最新体重之差"]}}]},
+
+  { key:"diet", group:"life", title:"饮食计划", icon:"\uE7C1", summary:"四餐记录、食物库与营养趋势",
+    tabs:[
+      { key:"diet-today", title:"今日记录", page:{ title:"今日记录", stage:"计划在 M6 阶段实现",
+        note:"今天吃了什么，热量和蛋白质够不够。",
+        bullets:["四餐分区：早餐 / 午餐 / 晚餐 / 加餐","从自己的食物库选食物 + 填份量，热量与营养素自动算",
+          "顶部汇总：热量环形进度 + 蛋白 / 碳水 / 脂肪进度条","饮水记录：+250ml / -250ml","日期切换，可补录昨天"]}},
+      { key:"diet-foods", title:"食物库", page:{ title:"食物库", stage:"计划在 M6 阶段实现",
+        note:"自己常吃的东西，营养值自己填——不联网查库。",
+        bullets:["字段：名称、单位（100克 / 1个 / 1勺）、热量、蛋白、碳水、脂肪",
+          "标记常用，选择食物时排在前面","随时增删改，改完立即生效"]}},
+      { key:"diet-trend", title:"趋势与目标", page:{ title:"趋势与目标", stage:"计划在 M6 阶段实现",
+        note:"两周的热量和蛋白走势，以及每天的目标设定。",
+        bullets:["近 14 天热量柱状 + 蛋白折线","目标设置：热量、蛋白、碳水、脂肪、饮水","每周达标天数统计"]}}]},
+
+  { key:"entertainment", group:"life", title:"游戏娱乐", icon:"\uE734", summary:"收藏库、游玩时长与统计",
+    tabs:[
+      { key:"ent-collection", title:"收藏库", page:{ title:"收藏库", stage:"计划在 M7 阶段实现",
+        note:"游戏、电影、剧集、书：想玩的、在玩的、通关的、弃掉的。",
+        bullets:["看板视图：想玩 / 在玩 / 已通关 / 弃坑，可拖动换列",
+          "字段：标题、类型、平台、评分（0-10）、备注、开始与完成日期",
+          "想玩清单里直接写价格，当愿望单用","按类型筛选（游戏 / 电影 / 剧集 / 书）"]}},
+      { key:"ent-sessions", title:"时长记录", page:{ title:"时长记录", stage:"计划在 M7 阶段实现",
+        note:"玩了多久、看了多久，随手记一下。",
+        bullets:["记录：日期、条目、分钟数、备注","快捷按钮 +30 分钟，方便随手记","按时间倒序的列表"]}},
+      { key:"ent-stats", title:"统计", page:{ title:"统计", stage:"计划在 M7 阶段实现",
+        note:"本周、本月花了多少时间在娱乐上，心里有个数。",
+        bullets:["本周 / 本月总时长","按类型（游戏 / 影视 / 书）的时长分布","在玩与想玩数量","不做复杂报表"]}}]},
+
+  { key:"settings", group:"", title:"数据与设置", icon:"\uE713", summary:"数据文件位置、备份恢复、外观与危险操作", pinned:true,
+    tabs:[
+      { key:"settings-data", title:"数据与备份", settings:"data" },
+      { key:"settings-appearance", title:"外观与导航", settings:"appearance" },
+      { key:"settings-about", title:"关于与危险操作", settings:"about" }]}
+];
+/* ── 验收清单（对应 PRD 第 10 章里可以动手检查的条目） ──────────── */
+var CHECK = [
+  { title:"启动与窗口", items:[
+    "双击 exe 能启动，窗口居中，标题为「个性化工作站」",
+    "窗口大小与位置会被记住，下次打开与上次一致",
+    "重复启动不会开出第二个窗口",
+    "数据文件缺失或损坏时能自动兜底，不崩溃、不丢原文件"]},
+  { title:"导航与标签页", items:[
+    "左侧导航按「工作事务 / 内容创作 / 生活健康」分组，可折叠展开",
+    "点击模块后，右侧内容区顶端显示该模块的详细标签页",
+    "「数据与设置」固定在导航栏底部，不随其他模块一起滚动",
+    "「首页总览」右侧的 ‹ 可折叠导航栏；折叠后这一行只显示 › 按钮",
+    "选中「首页总览」时蓝色底色铺满整行（含 ‹），按钮图标在底色上仍清晰可见",
+    "折叠成图标条后：文字与分组标题隐藏、图标居中、悬停显示名称",
+    "导航栏右边界可拖动改宽（180~420px），双击恢复默认",
+    "导航栏可整体隐藏，窗口左上角按钮能重新显示",
+    "浅色 / 深色 / 跟随系统三种主题切换正常"]},
+  { title:"数据与设置页", items:[
+    "数据文件位置显示正确，四个按钮（打开数据文件夹 / 打开备份文件夹 / 立即保存 / 重新加载）都可用",
+    "「立即备份」生成备份文件，备份列表能显示时间、文件名、大小，并可恢复",
+    "「从文件导入」可用，导入前会自动把当前数据另存一份",
+    "「清空所有数据」有二次确认，清空前会自动备份"]},
+  { title:"持久化与可靠性", items:[
+    "编辑后自动写盘，状态栏显示保存时间，关掉重开数据还在",
+    "中文在数据文件里按原样保存（不是 \\uXXXX 转义）"]}
+];
+
+/* ── 页面状态 ─────────────────────────────────────────────────────── */
+var state = {
+  moduleKey:"home", tabKey:null, theme:"light",
+  navVisible:true, navCollapsed:false, navWidth:236,
+  collapsed:{}, saveText:"--:--:--", saveError:false,
+  backups:[], backupCountText:"暂无备份"
+};
+var DATA_FILE = "D:\\软件工程项目\\个性化工作站\\data\\工作站数据.json";
+
+function findModule(key){ return MODULES.filter(function(m){ return m.key===key; })[0]; }
+function currentModule(){ return findModule(state.moduleKey); }
+function currentTab(){
+  var m = currentModule();
+  return m.tabs.filter(function(t){ return t.key===state.tabKey; })[0] || m.tabs[0];
+}
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function nowText(){
+  var d = new Date(), p = function(n){ return (n<10?"0":"")+n; };
+  return p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds());
+}
+function todayText(){
+  var d = new Date(), p = function(n){ return (n<10?"0":"")+n; };
+  var week = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][d.getDay()];
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+week;
+}
+
+/* ── 左侧导航 ─────────────────────────────────────────────────────── */
+function renderNav(){
+  var scroll = document.getElementById("navScroll");
+  var html = "";
+  GROUPS.forEach(function(g){
+    var items = MODULES.filter(function(m){ return m.group===g.key && !m.pinned; });
+    if(!items.length) return;
+    var collapsed = !!state.collapsed[g.key];
+    html += '<div class="group'+(collapsed?" collapsed":"")+'">';
+    if(g.title){
+      html += '<button class="group-head" data-group="'+g.key+'">'+
+              '<span class="glyph">'+(collapsed?"\uE76C":"\uE70D")+'</span>'+
+              '<span class="gtitle">'+esc(g.title)+'</span></button>';
+    }
+    html += '<div class="group-items">';
+    items.forEach(function(m){
+      var item = '<button class="nav-item'+(m.key===state.moduleKey?" active":"")+'" data-module="'+m.key+'" title="'+esc(m.title)+'">'+
+                 '<span class="glyph">'+m.icon+'</span><span class="label">'+esc(m.title)+'</span></button>';
+      if(g.title){
+        html += item;
+      } else {
+        /* 置顶的「首页总览」：模块与折叠按钮同在一个小框架里 */
+        html += '<div class="nav-home-row' + (m.key === state.moduleKey ? ' active' : '') +
+                '" data-module="' + m.key + '">' + item +
+                '<button class="nav-collapse-btn" title="折叠 / 展开导航栏">' +
+                '<span class="glyph">' + (state.navCollapsed ? "\uE76C" : "\uE76B") + '</span></button></div>';
+      }
+    });
+    html += '</div></div>';
+  });
+  scroll.innerHTML = html;
+
+  var pinned = MODULES.filter(function(m){ return m.pinned; })[0];
+  document.getElementById("navPinned").innerHTML =
+    '<button class="nav-item'+(pinned.key===state.moduleKey?" active":"")+'" data-module="'+pinned.key+'" title="'+esc(pinned.title)+'">'+
+    '<span class="glyph">'+pinned.icon+'</span><span class="label">'+esc(pinned.title)+'</span></button>';
+}
+
+/* ── 内容区顶部：模块标题、摘要、详细标签页 ───────────────────────── */
+function renderHead(){
+  var m = currentModule();
+  document.getElementById("moduleTitle").textContent = m.title;
+  document.getElementById("moduleSummary").textContent = m.summary;
+  var tabs = document.getElementById("tabs");
+  if(m.tabs.length < 2){ tabs.innerHTML = ""; return; }
+  var tab = currentTab();
+  tabs.innerHTML = m.tabs.map(function(t){
+    return '<button class="tab'+(t.key===tab.key?" active":"")+'" data-tab="'+t.key+'">'+esc(t.title)+'</button>';
+  }).join("");
+}
+/* ── 右侧内容区页面 ───────────────────────────────────────────────── */
+function placeholderHtml(page){
+  var bullets = (page.bullets||[]).map(function(b){
+    return '<li><span class="dot">•</span><span>'+esc(b)+'</span></li>';
+  }).join("");
+  return '<div class="card">'+
+    '<div class="ph-head">'+
+      '<div class="ph-icon"><span class="glyph">\uE7C3</span></div>'+
+      '<div style="margin-left:12px">'+
+        '<div class="ph-title">'+esc(page.title)+'</div>'+
+        '<div class="dim" style="margin-top:3px">'+esc(page.stage)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="ph-note">'+esc(page.note)+'</div>'+
+    '<div class="hair"></div>'+
+    '<h2 class="section-title">这一页计划包含</h2>'+
+    '<ul class="bullets">'+bullets+'</ul>'+
+  '</div>';
+}
+
+function settingsDataHtml(){
+  var rows = [
+    { created:"2026-09-13 13:19:34", file:"工作站备份_20260913_131934.json", size:"1.0 KB" },
+    { created:"2026-09-13 13:10:02", file:"工作站备份_20260913_131002.json", size:"0.9 KB" }
+  ].map(function(r){
+    return '<div class="bk-row"><span class="muted">'+r.created+'</span><span>'+esc(r.file)+'</span>'+
+           '<span class="dim">'+r.size+'</span><button class="btn btn-secondary small">恢复</button></div>';
+  }).join("");
+  return '<div class="card wide">'+
+      '<h2 class="section-title">数据文件</h2>'+
+      '<div style="font-weight:600;word-break:break-all">'+esc(DATA_FILE)+'</div>'+
+      '<div class="dim" style="margin-top:8px;line-height:19px">数据存在程序同目录的 data 文件夹里（一个独立文件）。把整个文件夹复制到 U 盘或别的盘，就是一份完整备份。刷新、关闭、重启电脑都不会丢。</div>'+
+      '<div class="row" style="margin-top:14px">'+
+        '<button class="btn btn-secondary">打开数据文件夹</button>'+
+        '<button class="btn btn-secondary">打开备份文件夹</button>'+
+        '<button class="btn btn-secondary">立即保存</button>'+
+        '<button class="btn btn-secondary">重新加载</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card wide">'+
+      '<div class="row between">'+
+        '<h2 class="section-title" style="margin:0">备份与恢复</h2>'+
+        '<div class="row"><span class="dim">'+esc(state.backupCountText)+'</span>'+
+          '<button class="btn btn-secondary">从文件导入</button>'+
+          '<button class="btn btn-primary" id="btnBackupNow">立即备份</button></div>'+
+      '</div>'+
+      '<div class="dim" style="line-height:19px">程序启动和退出时，如果数据有变化就会自动备份，最多保留最近 60 份。恢复或导入之前，都会先把当前数据另存一份，万一恢复错了还能退回来。</div>'+
+      '<div style="margin-top:14px"><div class="dim" style="margin-bottom:2px">备份列表（示例样子，实际第一次使用时是空的）</div>'+rows+'</div>'+
+    '</div>';
+}
+
+function settingsAppearanceHtml(){
+  var themes = [["light","浅色"],["dark","深色"],["system","跟随系统"]];
+  var label = state.theme==="light" ? "浅色" : (state.theme==="dark" ? "深色" : "跟随系统");
+  return '<div class="card wide">'+
+      '<h2 class="section-title">主题</h2>'+
+      '<div class="row">'+
+        themes.map(function(t){
+          return '<button class="btn '+(state.theme===t[0]?"btn-primary":"btn-secondary")+'" data-theme-set="'+t[0]+'">'+t[1]+'</button>';
+        }).join("")+
+        '<span class="dim" style="margin-left:6px">当前：'+label+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card wide">'+
+      '<h2 class="section-title">导航栏</h2>'+
+      '<label class="checkline"><input type="checkbox" id="cbNavVisible"'+(state.navVisible?" checked":"")+'><span>显示左侧导航栏</span></label>'+
+      '<label class="checkline"><input type="checkbox" id="cbNavCollapsed"'+(state.navCollapsed?" checked":"")+'><span>折叠为窄图标条</span></label>'+
+      '<div class="dim" style="margin-top:10px;line-height:19px">折叠 / 展开导航栏的按钮在「首页总览」这一行的右端；折叠成图标条后，这一行不再显示「首页总览」，只留 ‹ › 按钮。导航栏右边界可以直接拖动改变宽度（180 ~ 420px），双击边界恢复默认宽度，折叠或隐藏时不参与拖动。「数据与设置」固定在导航栏底部，不随其他模块一起滚动。快捷键 Ctrl+1~9 可直接切换模块。</div>'+
+    '</div>';
+}
+
+function settingsAboutHtml(){
+  return '<div class="card wide">'+
+      '<h2 class="section-title">关于</h2>'+
+      '<div style="font-weight:600">个性化工作站 · 版本 1.0.0</div>'+
+      '<div class="dim" style="margin-top:8px;line-height:19px">只在本机使用：不需要登录、不联网、不上传任何数据、不接任何第三方平台。所有内容都保存在你自己电脑上的数据文件里。</div>'+
+      '<div class="dim" style="margin-top:8px;line-height:19px">快捷键：Ctrl+1~9 切换模块 · Ctrl+S 立即保存 · F5 重新加载数据文件</div>'+
+    '</div>'+
+    '<div class="card wide">'+
+      '<h2 class="section-title" style="color:var(--danger)">危险操作</h2>'+
+      '<div class="dim" style="line-height:19px">清空所有数据会删除全部模块的记录（客户、项目、沟通记录、内容排期、训练、饮食、娱乐等），只留下一个空的数据文件。清空之前会自动备份一份，万一清错了可以从上面的备份列表里恢复。</div>'+
+      '<div style="margin-top:14px"><button class="btn btn-danger">清空所有数据</button></div>'+
+    '</div>';
+}
+
+function renderContent(){
+  var tab = currentTab();
+  var body = document.getElementById("contentBody");
+  if(tab.settings==="data") body.innerHTML = settingsDataHtml();
+  else if(tab.settings==="appearance") body.innerHTML = settingsAppearanceHtml();
+  else if(tab.settings==="about") body.innerHTML = settingsAboutHtml();
+  else body.innerHTML = placeholderHtml(tab.page);
+  body.scrollTop = 0;
+  bindContentEvents();
+}
+/* ── 顶部栏 / 状态栏 / 主题 / 导航形态 ───────────────────────────── */
+function effectiveTheme(){
+  if(state.theme!=="system") return state.theme;
+  return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+}
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme", effectiveTheme());
+  var label = state.theme==="light" ? "浅色" : (state.theme==="dark" ? "深色" : "跟随系统");
+  document.getElementById("btnTheme").title = "主题：" + label + "（点击切换）";
+}
+function applyNav(){
+  var nav = document.getElementById("nav");
+  nav.classList.toggle("collapsed", state.navCollapsed);
+  nav.classList.toggle("hidden", !state.navVisible);
+  var w = !state.navVisible ? 0 : (state.navCollapsed ? 58 : state.navWidth);
+  nav.style.width = w + "px";
+  nav.style.flexBasis = w + "px";
+}
+function renderStatus(){
+  document.getElementById("todayText").textContent = todayText();
+  document.getElementById("dataFileText").textContent = "数据文件：" + DATA_FILE;
+  document.getElementById("backupCountText").textContent = state.backupCountText;
+  document.getElementById("saveStatus").textContent = (state.saveError?"保存失败：":"已保存 ") + state.saveText;
+  document.getElementById("saveStatus2").textContent = (state.saveError?"保存失败：":"已保存 ") + state.saveText;
+  document.getElementById("saveDot").classList.toggle("err", state.saveError);
+}
+/* 编辑即保存：任何操作后刷新保存时间（与程序里「500ms 防抖写盘 + 状态栏显示时间」一致） */
+function touchSave(){
+  state.saveText = nowText();
+  state.saveError = false;
+  renderStatus();
+}
+
+/* ── 交互 ─────────────────────────────────────────────────────────── */
+function selectModule(key){
+  var m = findModule(key); if(!m) return;
+  state.moduleKey = key;
+  state.tabKey = m.tabs[0].key;
+  renderAll();
+  touchSave();
+}
+function selectTab(key){
+  state.tabKey = key;
+  renderHead(); renderContent();
+  touchSave();
+}
+function renderAll(){ renderNav(); renderHead(); renderContent(); applyNav(); applyTheme(); renderStatus(); }
+
+function bindContentEvents(){
+  var body = document.getElementById("contentBody");
+  body.querySelectorAll("[data-theme-set]").forEach(function(b){
+    b.addEventListener("click", function(){ state.theme = b.getAttribute("data-theme-set"); applyTheme(); renderContent(); touchSave(); });
+  });
+  var cbVis = document.getElementById("cbNavVisible");
+  if(cbVis) cbVis.addEventListener("change", function(){ state.navVisible = cbVis.checked; applyNav(); touchSave(); });
+  var cbCol = document.getElementById("cbNavCollapsed");
+  if(cbCol) cbCol.addEventListener("change", function(){ state.navCollapsed = cbCol.checked; applyNav(); touchSave(); });
+  var bk = document.getElementById("btnBackupNow");
+  if(bk) bk.addEventListener("click", function(){
+    state.backupCountText = "1 份备份";
+    renderStatus(); renderContent(); touchSave();
+  });
+}
+
+document.getElementById("navScroll").addEventListener("click", function(e){
+  var cb = e.target.closest(".nav-collapse-btn");
+  if(cb){ state.navCollapsed = !state.navCollapsed; renderNav(); applyNav(); touchSave(); return; }
+  var g = e.target.closest(".group-head");
+  if(g){ var key = g.getAttribute("data-group"); state.collapsed[key] = !state.collapsed[key]; renderNav(); return; }
+  var item = e.target.closest(".nav-item");
+  if(item){ selectModule(item.getAttribute("data-module")); return; }
+  /* 小框架里折叠按钮左边的空白也当作「首页总览」的点击区域 */
+  var row = e.target.closest(".nav-home-row");
+  if(row) selectModule(row.getAttribute("data-module"));
+});
+document.getElementById("navPinned").addEventListener("click", function(e){
+  var item = e.target.closest(".nav-item");
+  if(item) selectModule(item.getAttribute("data-module"));
+});
+document.getElementById("tabs").addEventListener("click", function(e){
+  var tab = e.target.closest(".tab");
+  if(tab) selectTab(tab.getAttribute("data-tab"));
+});
+document.getElementById("btnNavVisible").addEventListener("click", function(){
+  state.navVisible = !state.navVisible; applyNav(); touchSave();
+});
+/* 拖动导航栏右边界改变宽度（180 ~ 420px），双击恢复默认；折叠或隐藏时不生效 */
+var NAV_MIN = 180, NAV_MAX = 420, NAV_DEFAULT = 236;
+(function(){
+  var resizer = document.getElementById("navResizer");
+  if(!resizer) return;
+  resizer.addEventListener("mousedown", function(e){
+    if(!state.navVisible || state.navCollapsed) return;
+    e.preventDefault();
+    var startX = e.clientX, startW = state.navWidth;
+    var nav = document.getElementById("nav");
+    nav.classList.add("resizing");
+    document.body.classList.add("resizing");
+    function onMove(ev){
+      state.navWidth = Math.round(Math.min(NAV_MAX, Math.max(NAV_MIN, startW + ev.clientX - startX)));
+      applyNav();
+    }
+    function onUp(){
+      nav.classList.remove("resizing");
+      document.body.classList.remove("resizing");
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      touchSave();
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  });
+  resizer.addEventListener("dblclick", function(){
+    state.navWidth = NAV_DEFAULT; applyNav(); touchSave();
+  });
+})();
+document.getElementById("btnTheme").addEventListener("click", function(){
+  state.theme = state.theme==="light" ? "dark" : (state.theme==="dark" ? "system" : "light");
+  applyTheme(); touchSave();
+});
+if(window.matchMedia){
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){
+    if(state.theme==="system") applyTheme();
+  });
+}
+document.addEventListener("keydown", function(e){
+  if(e.ctrlKey && e.key>="1" && e.key<="9"){
+    var m = MODULES[parseInt(e.key,10)-1];
+    if(m){ e.preventDefault(); selectModule(m.key); }
+  }
+  if(e.key==="Escape") document.getElementById("checkPanel").classList.remove("open");
+});
+/* ── 验收清单抽屉 ─────────────────────────────────────────────────── */
+var checkState = [];
+CHECK.forEach(function(g){ g.items.forEach(function(){ checkState.push(false); }); });
+
+function renderCheck(){
+  var idx = 0, html = "";
+  CHECK.forEach(function(g){
+    html += '<div class="cp-group"><h3>'+esc(g.title)+'</h3>';
+    g.items.forEach(function(text){
+      var i = idx++;
+      html += '<label class="cp-item'+(checkState[i]?" done":"")+'" data-i="'+i+'">'+
+              '<input type="checkbox"'+(checkState[i]?" checked":"")+'>'+
+              '<span>'+esc(text)+'</span></label>';
+    });
+    html += '</div>';
+  });
+  document.getElementById("cpBody").innerHTML = html;
+  var done = checkState.filter(Boolean).length;
+  document.getElementById("cpCount").textContent = done + " / " + checkState.length;
+  document.getElementById("cpBar").style.width = (checkState.length? Math.round(done/checkState.length*100):0) + "%";
+}
+document.getElementById("cpBody").addEventListener("change", function(e){
+  var item = e.target.closest(".cp-item"); if(!item) return;
+  checkState[parseInt(item.getAttribute("data-i"),10)] = e.target.checked;
+  renderCheck();
+});
+document.getElementById("cpBody").addEventListener("click", function(e){
+  var item = e.target.closest(".cp-item"); if(!item || e.target.tagName==="INPUT") return;
+  checkState[parseInt(item.getAttribute("data-i"),10)] = !checkState[parseInt(item.getAttribute("data-i"),10)];
+  renderCheck();
+});
+document.getElementById("btnCheck").addEventListener("click", function(){
+  document.getElementById("checkPanel").classList.add("open");
+  document.getElementById("hint").style.display = "none";
+});
+document.getElementById("btnCheckClose").addEventListener("click", function(){
+  document.getElementById("checkPanel").classList.remove("open");
+});
+document.getElementById("cpReset").addEventListener("click", function(){
+  checkState = checkState.map(function(){ return false; }); renderCheck();
+});
+document.getElementById("hintClose").addEventListener("click", function(){
+  document.getElementById("hint").style.display = "none";
+});
+
+/* ── 启动 ─────────────────────────────────────────────────────────── */
+state.tabKey = "home-overview";
+renderAll();
+renderCheck();
+</script>
+</body>
+</html>

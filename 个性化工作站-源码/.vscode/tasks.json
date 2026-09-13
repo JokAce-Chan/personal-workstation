@@ -1,0 +1,27 @@
+﻿{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/PersonalWorkstation/PersonalWorkstation.csproj",
+        "-c", "Debug"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "发布 exe",
+      "command": "powershell",
+      "type": "process",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}/publish.ps1"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
