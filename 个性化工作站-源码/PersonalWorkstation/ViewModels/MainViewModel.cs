@@ -386,29 +386,44 @@ public sealed class MainViewModel : ObservableObject
 
     private void BuildCatalog()
     {
-        var home = NewItem("home", "首页总览", "\uE80F", "今日计划、快速备忘与各模块摘要");
+        var home = NewItem("home", "首页总览", "\uE80F", "今日课程、DDL 与各模块摘要");
         home.Tabs.Add(NewTab("home-overview", "今日总览"));
 
-        var plan = NewItem("plan", "今日计划", "\uE787", "当天要做的事、优先级与顺延");
+        var plan = NewItem("plan", "今日计划", "\uE787", "当天要做的事、DDL、优先级与顺延");
         plan.Tabs.Add(NewTab("plan-tasks", "任务清单"));
         plan.Tabs.Add(NewTab("plan-calendar", "月历与完成率"));
 
-        var dev = NewItem("dev", "开发工作", "\uE943", "项目、待办与缺陷、代码片段");
-        dev.Tabs.Add(NewTab("dev-projects", "项目与待办"));
-        dev.Tabs.Add(NewTab("dev-snippets", "代码片段"));
-        dev.Tabs.Add(NewTab("dev-notes", "项目笔记"));
+        var course = NewItem("course", "课程与作业", "\uE8A5", "课表、作业实验与考试复习");
+        course.Tabs.Add(NewTab("course-timetable", "课程表"));
+        course.Tabs.Add(NewTab("course-homework", "作业与实验"));
+        course.Tabs.Add(NewTab("course-exam", "考试与复习"));
 
-        var consulting = NewItem("consulting", "咨询工作", "\uE77B", "客户、项目、沟通记录与时长费用");
-        consulting.Tabs.Add(NewTab("consulting-clients", "客户"));
-        consulting.Tabs.Add(NewTab("consulting-projects", "咨询项目"));
-        consulting.Tabs.Add(NewTab("consulting-logs", "沟通记录"));
-        consulting.Tabs.Add(NewTab("consulting-fee", "费用统计"));
+        var project = NewItem("project", "项目实战", "\uE943", "项目协作、代码片段与技术笔记");
+        project.Tabs.Add(NewTab("project-board", "项目与待办"));
+        project.Tabs.Add(NewTab("project-team", "团队协作"));
+        project.Tabs.Add(NewTab("project-snippets", "代码片段"));
+        project.Tabs.Add(NewTab("project-notes", "技术笔记"));
 
-        var social = NewItem("social", "自媒体", "\uE714", "选题、排期与发布后数据");
-        social.Tabs.Add(NewTab("social-schedule", "内容排期"));
-        social.Tabs.Add(NewTab("social-ideas", "灵感池"));
-        social.Tabs.Add(NewTab("social-review", "数据复盘"));
-        social.Tabs.Add(NewTab("social-platforms", "平台管理"));
+        var algo = NewItem("algo", "刷题算法", "\uE9D5", "题目记录、专题进度与错题复习");
+        algo.Tabs.Add(NewTab("algo-problems", "题目记录"));
+        algo.Tabs.Add(NewTab("algo-topics", "专题进度"));
+        algo.Tabs.Add(NewTab("algo-review", "错题本"));
+
+        var career = NewItem("career", "实习求职", "\uE77B", "目标公司、投递、面试与 Offer 对比");
+        career.Tabs.Add(NewTab("career-companies", "目标公司"));
+        career.Tabs.Add(NewTab("career-applications", "投递记录"));
+        career.Tabs.Add(NewTab("career-interviews", "面试记录"));
+        career.Tabs.Add(NewTab("career-offers", "Offer 对比"));
+
+        var contest = NewItem("contest", "竞赛与证书", "\uE9D9", "竞赛报名成绩与证书考试");
+        contest.Tabs.Add(NewTab("contest-races", "竞赛记录"));
+        contest.Tabs.Add(NewTab("contest-certs", "证书与考试"));
+
+        var blog = NewItem("blog", "技术输出", "\uE714", "博客与开源内容的选题、排期与复盘");
+        blog.Tabs.Add(NewTab("blog-schedule", "内容排期"));
+        blog.Tabs.Add(NewTab("blog-ideas", "灵感池"));
+        blog.Tabs.Add(NewTab("blog-review", "数据复盘"));
+        blog.Tabs.Add(NewTab("blog-platforms", "平台管理"));
 
         var fitness = NewItem("fitness", "健身计划", "\uEB51", "本周安排、训练打卡与身体数据");
         fitness.Tabs.Add(NewTab("fitness-week", "本周安排"));
@@ -431,26 +446,37 @@ public sealed class MainViewModel : ObservableObject
         settings.Tabs.Add(NewTab("settings-appearance", "外观与导航"));
         settings.Tabs.Add(NewTab("settings-about", "关于与危险操作"));
 
-        AllItems.AddRange(new[] { home, plan, dev, consulting, social, fitness, diet, entertainment, settings });
+        AllItems.AddRange(new[]
+        {
+            home, plan, course, project, algo, career, contest, blog,
+            fitness, diet, entertainment, settings,
+        });
         PinnedItem = settings;
 
         var top = new NavGroup { Key = "top", Title = "" };
         top.Items.Add(home);
 
-        var work = new NavGroup { Key = "work", Title = "工作事务" };
-        work.Items.Add(plan);
-        work.Items.Add(dev);
-        work.Items.Add(consulting);
+        var study = new NavGroup { Key = "study", Title = "学习事务" };
+        study.Items.Add(plan);
+        study.Items.Add(course);
 
-        var create = new NavGroup { Key = "create", Title = "内容创作" };
-        create.Items.Add(social);
+        var devGroup = new NavGroup { Key = "dev", Title = "开发实战" };
+        devGroup.Items.Add(project);
+        devGroup.Items.Add(algo);
+
+        var careerGroup = new NavGroup { Key = "career", Title = "升学求职" };
+        careerGroup.Items.Add(career);
+        careerGroup.Items.Add(contest);
+
+        var output = new NavGroup { Key = "output", Title = "技术输出" };
+        output.Items.Add(blog);
 
         var life = new NavGroup { Key = "life", Title = "生活健康" };
         life.Items.Add(fitness);
         life.Items.Add(diet);
         life.Items.Add(entertainment);
 
-        foreach (var group in new[] { top, work, create, life })
+        foreach (var group in new[] { top, study, devGroup, careerGroup, output, life })
         {
             group.IsExpanded = !Data.Settings.CollapsedGroups.Contains(group.Key);
             Groups.Add(group);

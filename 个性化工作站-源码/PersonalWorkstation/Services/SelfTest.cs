@@ -33,23 +33,23 @@ public static class SelfTest
 
             store.LoadWithRecovery();
             var data = store.Data;
-            Check("空数据文件可解析", data.Social.Contents.Count == 0 && data.Consulting.Clients.Count == 0);
+            Check("空数据文件可解析", data.Blog.Contents.Count == 0 && data.Career.Companies.Count == 0);
             Check("模块结构齐全",
                 data.Settings is not null && data.Plans is not null && data.Fitness.Plan.Count == 0 &&
                 data.Diet.Foods.Count == 0 && data.Entertainment.Library.Count == 0);
 
-            data.Consulting.Clients.Add(new ConsultClient
+            data.Career.Companies.Add(new Company
             {
                 Id = Helper.NewId(),
-                Name = "测试客户",
-                Status = "active",
-                NextContactAt = Helper.Today(),
+                Name = "测试公司",
+                Status = "applied",
+                Position = "后端开发实习生",
             });
-            data.Social.Platforms.Add("微信公众号");
+            data.Blog.Platforms.Add("掘金");
             Check("保存成功", store.Save());
 
             var saved = File.ReadAllText(store.DataFile, Encoding.UTF8);
-            Check("中文按原样写入（未转义成 \\uXXXX）", saved.Contains("测试客户") && saved.Contains("微信公众号"));
+            Check("中文按原样写入（未转义成 \\uXXXX）", saved.Contains("测试公司") && saved.Contains("掘金"));
 
             var backupName = store.CreateBackup();
             var backupPath = Path.Combine(store.BackupDir, backupName);
@@ -58,19 +58,19 @@ public static class SelfTest
 
             store.ResetToEmpty();
             store.LoadWithRecovery();
-            Check("清空后没有任何记录", store.Data.Consulting.Clients.Count == 0);
+            Check("清空后没有任何记录", store.Data.Career.Companies.Count == 0);
 
             var restored = store.RestoreBackup(backupName, out var restoreMessage);
             Check("恢复备份成功", restored, restoreMessage);
             store.LoadWithRecovery();
-            Check("恢复后记录回来了", store.Data.Consulting.Clients.Count == 1);
+            Check("恢复后记录回来了", store.Data.Career.Companies.Count == 1);
 
             var importSource = Path.Combine(root, "import-test.json");
-            data.Consulting.Clients[0].Name = "导入后的客户";
+            data.Career.Companies[0].Name = "导入后的公司";
             File.WriteAllText(importSource, AppJson.Serialize(data), new UTF8Encoding(false));
             var imported = store.ImportFromFile(importSource, out var importMessage);
             Check("从文件导入成功", imported, importMessage);
-            Check("导入内容生效", store.Data.Consulting.Clients[0].Name == "导入后的客户");
+            Check("导入内容生效", store.Data.Career.Companies[0].Name == "导入后的公司");
 
             File.WriteAllText(store.DataFile, "{ 这不是合法的 JSON", new UTF8Encoding(false));
             store.LoadWithRecovery();

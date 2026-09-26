@@ -365,18 +365,47 @@ public sealed class DataStoreService
         data.Settings ??= new AppSettings();
         data.QuickNotes ??= new List<QuickNote>();
         data.Plans ??= new Dictionary<string, List<PlanTask>>();
-        data.Social ??= new SocialData();
-        data.Social.Platforms ??= new List<string>();
-        data.Social.Contents ??= new List<SocialContent>();
-        data.Social.Ideas ??= new List<SocialIdea>();
-        data.Dev ??= new DevData();
-        data.Dev.Projects ??= new List<DevProject>();
-        data.Dev.Items ??= new List<DevItem>();
-        data.Dev.Snippets ??= new List<DevSnippet>();
-        data.Consulting ??= new ConsultingData();
-        data.Consulting.Clients ??= new List<ConsultClient>();
-        data.Consulting.Projects ??= new List<ConsultProject>();
-        data.Consulting.Logs ??= new List<ConsultLog>();
+        data.Settings.CollapsedGroups ??= new List<string>();
+        data.Home ??= new HomeData();
+        data.Home.CardOrder ??= new List<string>();
+        data.Home.HiddenCards ??= new List<string>();
+
+        data.Course ??= new CourseData();
+        data.Course.Courses ??= new List<Course>();
+        data.Course.Slots ??= new List<CourseSlot>();
+        data.Course.Homeworks ??= new List<Homework>();
+        data.Course.Exams ??= new List<Exam>();
+        data.Course.ReviewItems ??= new List<ReviewItem>();
+
+        data.Project ??= new ProjectData();
+        data.Project.Projects ??= new List<Project>();
+        data.Project.Members ??= new List<ProjectMember>();
+        data.Project.Tasks ??= new List<ProjectTask>();
+        data.Project.Milestones ??= new List<Milestone>();
+        data.Project.Meetings ??= new List<MeetingNote>();
+        data.Project.Snippets ??= new List<CodeSnippet>();
+        data.Project.Notes ??= new List<TechNote>();
+
+        data.Algo ??= new AlgoData();
+        data.Algo.Problems ??= new List<AlgoProblem>();
+        data.Algo.Topics ??= new List<AlgoTopic>();
+
+        data.Career ??= new CareerData();
+        data.Career.Companies ??= new List<Company>();
+        data.Career.Applications ??= new List<Application>();
+        data.Career.Interviews ??= new List<Interview>();
+        data.Career.Offers ??= new List<Offer>();
+        data.Career.Resumes ??= new List<ResumeVersion>();
+
+        data.Contest ??= new ContestData();
+        data.Contest.Contests ??= new List<Contest>();
+        data.Contest.Certifications ??= new List<Certification>();
+
+        data.Blog ??= new BlogData();
+        data.Blog.Platforms ??= new List<string>();
+        data.Blog.Contents ??= new List<BlogContent>();
+        data.Blog.Ideas ??= new List<BlogIdea>();
+
         data.Fitness ??= new FitnessData();
         data.Fitness.Goals ??= new FitnessGoals();
         data.Fitness.Plan ??= new List<FitnessDayPlan>();
